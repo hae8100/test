@@ -38,18 +38,18 @@ SirenOrder 서비스를 MSA/DDD/Event Storming/EDA 를 포괄하는 분석/설�
 
 [ 기능적 요구사항 ]
 1. 점원이 판매할 상품가격과 상태(Available, SoldOut)을 등록한다
-2. 상품이 등록되면 상품상태를 주문DB에 전달한다
+2. 상품이 등록되면 상품상태를 주문서비스(DB)의 상품정보에 전달한다
 3. 점원에게 상품상태 정보를 조회할 수 있는 Report 서비스를 제공한다
 4. 고객은 주문할 메뉴를 선택하여 주문한다
-5. 주문이 되면 주문DB의 가격과 상품DB의 상품상태(Available, SoldOut)정보를 조회한다.
+5. 주문이 되면 주문서비스내 상품상태(Available, SoldOut)와 상품서비스의 상품가격을 조회한다.
 6. 가격이 0KRW이 아니고 상품상태가 Available할 경우 주문은 완료된다.
 
 [ 비기능적 요구사항 ]
 1. 트랜잭션
-    1. 상품상태는 상품DB에서 조회한다 :  Sync 호출 
+    1. 주문시 상품가격는 상품서비스에서 조회한다 :  Sync 호출 
 1. 장애격리
     1. Order 서비스가 중단되더라도 상품정보는 365일 24시간 등록할 수 있어야 한다  Async (event-driven), Eventual Consistency
-    1. 상품등록이 완료되면 Order서비스가 과중되더라도 상품정보는 Order 서비스가 정상화된 이후에 수신한다 Circuit breaker, fallback
+    1. 주문시 상품(Product)서비스가 과중되더라도 상품정보는 상품서비스가 정상화된 이후에 수신한다 Circuit breaker, fallback
 1. 성능
     1. 점원은 Report 서비스를 통해서 상품 정보를 확인할 수 있어야 한다  CQRS
     1. 상품상태가 바뀔때마다 고객에게 알림을 줄 수 있어야 한다  Event driven
