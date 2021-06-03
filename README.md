@@ -27,6 +27,7 @@ SirenOrder 서비스를 MSA/DDD/Event Storming/EDA 를 포괄하는 분석/설�
     - [CI/CD 설정](#CICD-설정)
     - [Kubernetes 설정](#Kubernetes-설정)
     - [ConfigMap](#ConfigMap-설정)
+    - [liveness Probe](# 셀프힐링 (livenessProbe 설정))
     - [동기식 호출 / 서킷 브레이킹 / 장애격리](#동기식-호출/서킷-브레이킹/장애격리)
     - [오토스케일 아웃](#Autoscale-HPA)
     - [무정지 재배포](#Zero-downtime-deploy)
@@ -436,10 +437,56 @@ EKS 설치된 kafka에 정상 접근된 것을 확인할 수 있다. (해당 con
     2021-05-20 13:42:14.064 INFO 1 --- [container-0-C-1] o.s.c.s.b.k.KafkaMessageChannelBinder$1 : partitions assigned: [coffee-0]
 ```
 
+## 셀프힐링 (livenessProbe 설정)
+- order deployment livenessProbe (gateway:5/order:3/product:8/report:5) 
+```
+          livenessProbe:
+            httpGet:
+              path: '/actuator/health'
+              port: 8080
+            initialDelaySeconds: 120  //초기delay시간
+            timeoutSeconds: 1         //timeout시간내응답점검
+            periodSeconds: 5          //점검주기
+            failureThreshold: 5       //실패5번이후에는 RESTART
+```
+livenessProbe 기능 점검은 HPA적용되지 않은 상태에서 진행한다.
+```
+Pod 의 변화를 살펴보기 위하여 watch
+```
+➜  ~ kubectl get -n siren po -w
+NAME                           READY   STATUS    RESTARTS   AGE
+pod/gateway-6449f7459-bcgz6    1/1     Running   0          31m
+pod/order-74f45d958f-qnnz5     1/1     Running   0          5m48s
+pod/product-698dd8fcc4-5frqp   1/1     Running   0          42m
+pod/report-86d9f7b89-knl6h     1/1     Running   0          140m
+pod/siege                      1/1     Running   0          119m
+```
+order 서비스를 다운시키기 위한 부하 발생
+```
+➜  ~ siege -c100 -t60S -r10 -v --content-type "application/json" 'http://af353bfd8fcc047ee927ad7315ecbd10-155124666.ap-northeast-2.elb.amazonaws.com:8080/orders POST {"productId": "4"}'
+```
+order Pod의 liveness 조건 미충족에 의한 RESTARTS 횟수 증가 확인
+```
+➜  ~ kubectl get -n siren po -w
+NAME                       READY   STATUS    RESTARTS   AGE
+gateway-6449f7459-bcgz6    1/1     Running   0          36m
+order-74f45d958f-qnnz5     0/1     Running   1          10m
+product-698dd8fcc4-5frqp   1/1     Running   0          46m
+report-86d9f7b89-knl6h     1/1     Running   0          144m
+siege                      1/1     Running   0          124m
+```
+kubectl get -n siren po -w
+order-74f45d958f-qnnz5     1/1     Running             0          2m6s
+order-74f45d958f-qnnz5     0/1     Running             1          9m28s
+order-74f45d958f-qnnz5     1/1     Running             1          11m
+```
+
+
 
 ## 동기식 호출 / 서킷 브레이킹 / 장애격리
 
 * 서킷 브레이킹 프레임워크의 선택: Spring FeignClient + Hystrix 옵션을 사용하여 구현함
+-  (gateway:5/order:4/product:6/report:5) 
 
 시나리오는 주문(order)-->상품(product) 연결을 RestFul Request/Response 로 연동하여 구현이 되어있고, 주문이 과도할 경우 CB 를 통하여 장애격리.
 
@@ -466,7 +513,8 @@ hystrix:
                 
                 //임의의 부하를 위한 강제 설정
                 try {
-                        Thread.currentThread().sleep((long) (400 + Math.random() * 220));
+                        Thread.currentThread();
+                        Thread.sleep((long) (400 + Math.random() * 220));
                 } catch (InterruptedException e) {
                         e.printStackTrace();
                 }
@@ -480,7 +528,7 @@ hystrix:
 - 60초 동안 실시
 
 ```
-siege -c100 -t60S -r10 --content-type "application/json" 'http://ac4ff02e7969e44afbe64ede4b2441ac-1979746227.ap-northeast-2.elb.amazonaws.com:8080/orders POST {"customerId":2, "productId":3}'
+siege -c100 -t60S -r10 -v --content-type "application/json" 'http://af353bfd8fcc047ee927ad7315ecbd10-155124666.ap-northeast-2.elb.amazonaws.com:8080/orders POST {"productId": "4"}'
 
 HTTP/1.1 201     6.51 secs:     239 bytes ==> POST http://ac4ff02e7969e44afbe64ede4b2441ac-1979746227.ap-northeast-2.elb.amazonaws.com:8080/orders
 HTTP/1.1 201     0.73 secs:     239 bytes ==> POST http://ac4ff02e7969e44afbe64ede4b2441ac-1979746227.ap-northeast-2.elb.amazonaws.com:8080/orders
@@ -669,50 +717,4 @@ k8s의 무중단 서비스 배포 기능을 점검한다.
 배포시 pod는 위의 흐름과 같이 생성 및 종료되어 서비스의 무중단을 보장했다.
 
 
-## 셀프힐링 (livenessProbe 설정)
-- order deployment livenessProbe 
-```
-          livenessProbe:
-            httpGet:
-              path: /actuator/health
-              port: 8080
-              scheme: HTTP
-            initialDelaySeconds: 120
-            timeoutSeconds: 2
-            periodSeconds: 5
-            successThreshold: 1
-            failureThreshold: 5
-```
-livenessProbe 기능 점검을 위해 HPA 제거한다.
-```
-➜  ~ kubectl get hpa -n coffee
-No resources found in coffee namespace.
-```
-Pod 의 변화를 살펴보기 위하여 watch
-```
-➜  ~ kubectl get -n coffee po -w
-NAME                        READY   STATUS    RESTARTS   AGE
-customer-785f544f95-mh456   1/1     Running   0          23h
-delivery-557f4d7f49-z47bx   1/1     Running   0          23h
-gateway-6886bbf85b-4hggj    1/1     Running   0          149m
-gateway-6886bbf85b-mg9fz    1/1     Running   0          22h
-order-659cd7bddf-glgjj      1/1     Running   0          22m
-product-7c5c949965-z6pqs    1/1     Running   0          131m
-report-85dd84c856-qbzbc     1/1     Running   0          16h
-```
-order 서비스를 다운시키기 위한 부하 발생
-```
-➜  ~ siege -c50 -t60S -r10 --content-type "application/json" 'http://ac4ff02e7969e44afbe64ede4b2441ac-1979746227.ap-northeast-2.elb.amazonaws.com:8080/orders POST {"customerId":2, "productId":1}'
-```
-order Pod의 liveness 조건 미충족에 의한 RESTARTS 횟수 증가 확인
-```
-➜  ~ kubectl get -n coffee po -w
-NAME                        READY   STATUS    RESTARTS   AGE
-customer-785f544f95-mh456   1/1     Running   0          23h
-delivery-557f4d7f49-z47bx   1/1     Running   0          23h
-gateway-6886bbf85b-4hggj    1/1     Running   0          157m
-gateway-6886bbf85b-mg9fz    1/1     Running   0          22h
-order-659cd7bddf-glgjj      1/1     Running   1          30m
-product-7c5c949965-z6pqs    1/1     Running   0          138m
-report-85dd84c856-qbzbc     1/1     Running   0          16h
-```
+
