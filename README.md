@@ -425,17 +425,51 @@ gateway가 아래와 같이 LoadBalnacer 역할을 수행한다
             destination: ${NS} #siren
             contentType: application/json
 ```
-EKS 설치된 kafka에 정상 접근된 것을 확인할 수 있다. (해당 configMap TEXT1 값을 잘못된 값으로 넣으면 kafka WARN)
+정상동작여부를 확인하기 위해 아래처럼 Configmap을 수정하면 
+report서비스에 지정된 Token이 잘못되어 상품을 등록해도 report서비스에는 데이터가 조회되지 않는다
 ```
-    2021-05-20 13:42:11.773 INFO 1 --- [pool-1-thread-1] o.a.kafka.common.utils.AppInfoParser : Kafka commitId : fa14705e51bd2ce5
-    2021-05-20 13:42:11.785 INFO 1 --- [pool-1-thread-1] org.apache.kafka.clients.Metadata : Cluster ID: kJGw05_iTNOfms7RJu0JSw
-    2021-05-20 13:42:14.049 INFO 1 --- [container-0-C-1] o.a.k.c.c.internals.AbstractCoordinator : [Consumer clientId=consumer-3, groupId=report] Attempt to heartbeat failed since group is rebalancing
-    2021-05-20 13:42:14.049 INFO 1 --- [container-0-C-1] o.a.k.c.c.internals.ConsumerCoordinator : [Consumer clientId=consumer-3, groupId=report] Revoking previously assigned partitions []
-    2021-05-20 13:42:14.049 INFO 1 --- [container-0-C-1] o.s.c.s.b.k.KafkaMessageChannelBinder$1 : partitions revoked: []
-    2021-05-20 13:42:14.049 INFO 1 --- [container-0-C-1] o.a.k.c.c.internals.AbstractCoordinator : [Consumer clientId=consumer-3, groupId=report] (Re-)joining group
-    2021-05-20 13:42:14.056 INFO 1 --- [container-0-C-1] o.a.k.c.c.internals.AbstractCoordinator : [Consumer clientId=consumer-3, groupId=report] Successfully joined group with generation 3
-    2021-05-20 13:42:14.057 INFO 1 --- [container-0-C-1] o.a.k.c.c.internals.ConsumerCoordinator : [Consumer clientId=consumer-3, groupId=report] Setting newly assigned partitions [coffee-0]
-    2021-05-20 13:42:14.064 INFO 1 --- [container-0-C-1] o.s.c.s.b.k.KafkaMessageChannelBinder$1 : partitions assigned: [coffee-0]
+kubectl get cm report-config -n siren -o yaml
+
+apiVersion: v1
+data:
+  NS: siren1
+  TEXT1: my-kafka.kafka.svc.cluster.local:9092
+  TEXT2: Welcome
+kind: ConfigMap
+metadata:
+  annotations:
+    kubectl.kubernetes.io/last-applied-configuration: |
+      {"apiVersion":"v1","data":{"NS":"siren1","TEXT1":"my-kafka.kafka.svc.cluster.local:9092","TEXT2":"Welcome"},"kind":"ConfigMap","metadata":{"annotations":{},"name":"report-config","namespace":"siren"}}
+  creationTimestamp: "2021-06-03T12:52:09Z"
+  name: report-config
+  namespace: siren
+  resourceVersion: "128811"
+  selfLink: /api/v1/namespaces/siren/configmaps/report-config
+  uid: 10df454f-c19f-47d0-b1c4-3eac9439dfd6
+```
+
+```
+  ~ http http://af353bfd8fcc047ee927ad7315ecbd10-155124666.ap-northeast-2.elb.amazonaws.com:8080/reports
+```
+
+```
+HTTP/1.1 200 OK
+Content-Type: application/hal+json;charset=UTF-8
+Date: Thu, 03 Jun 2021 13:04:29 GMT
+transfer-encoding: chunked
+
+{
+    "_embedded": {
+        "reports": []
+    },
+    "_links": {
+        "profile": {
+            "href": "http://report:8080/profile/reports"
+        },
+        "self": {
+            "href": "http://report:8080/reports"
+        }
+
 ```
 
 ## 셀프힐링 livenessProbe 설정
