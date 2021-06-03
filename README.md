@@ -224,6 +224,66 @@ public interface ProductService {
 
 - 주문 받은 즉시 상품 가격을 조회하도록 구현
 ```
+package siren;
+
+@Entity
+@Table(name="Order_table")
+public class Order {
+
+    @Id
+    // @GeneratedValue(strategy=GenerationType.AUTO)
+    @GeneratedValue(strategy=GenerationType.IDENTITY)
+    private Long id;
+    private Long productId;
+    private Integer price;
+
+    @PostPersist
+    public void onPostPersist() throws Exception {
+
+        Integer price = OrderApplication.applicationContext.getBean(siren.external.ProductService.class)
+                .checkProduct(this.getProductId());
+
+        Optional<Product> productOptional  = OrderApplication.applicationContext.getBean(siren.ProductRepository.class).findById(this.getProductId());
+        Product product = productOptional.get();
+        String status = product.getStatus();
+
+                if ( price > 0 && !(status.equals("SoldOut")) && status != null ) {
+        
+                        Ordered ordered = new Ordered();
+                        this.setPrice(price);
+                        BeanUtils.copyProperties(this, ordered);
+                        ordered.publishAfterCommit();
+
+                } else
+                    throw new Exception("Product Sold Out - Exception Raised");
+
+    }
+
+    public Long getId() {
+        return id;
+    }
+
+    public void setId(Long id) {
+        this.id = id;
+    }
+    public Long getProductId() {
+        return productId;
+    }
+
+    public void setProductId(Long productId) {
+        this.productId = productId;
+    }
+    public Integer getPrice() {
+        return price;
+    }
+
+    public void setPrice(Integer price) {
+        this.price = price;
+    }
+}
+```
+
+```
 @RequestMapping(value = "/products/checkProduct", method = RequestMethod.GET, produces = "application/json;charset=UTF-8")
 
 public Integer checkProduct(@RequestParam("productId") Long productId)
