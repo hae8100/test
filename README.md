@@ -488,12 +488,12 @@ Pod 의 변화를 살펴보기 위하여 watch
 ```
 ➜  ~ kubectl get -n siren po -w
 
-NAME                           READY   STATUS    RESTARTS   AGE
-pod/gateway-6449f7459-bcgz6    1/1     Running   0          31m
-pod/order-74f45d958f-qnnz5     1/1     Running   0          5m48s
-pod/product-698dd8fcc4-5frqp   1/1     Running   0          42m
-pod/report-86d9f7b89-knl6h     1/1     Running   0          140m
-pod/siege                      1/1     Running   0          119m
+    NAME                           READY   STATUS    RESTARTS   AGE
+    pod/gateway-6449f7459-bcgz6    1/1     Running   0          31m
+    pod/order-74f45d958f-qnnz5     1/1     Running   0          5m48s
+    pod/product-698dd8fcc4-5frqp   1/1     Running   0          42m
+    pod/report-86d9f7b89-knl6h     1/1     Running   0          140m
+    pod/siege                      1/1     Running   0          119m
 ```
 
 order 서비스를 다운시키기 위한 부하 발생
@@ -507,10 +507,10 @@ order Pod의 liveness 조건 미충족에 의한 RESTARTS 횟수 증가 확인
 ```
 ➜  ~ kubectl get -n siren po -w
 
-NAME                       READY   STATUS              RESTARTS   AGE
-order-74f45d958f-qnnz5     1/1     Running             0          2m6s
-order-74f45d958f-qnnz5     0/1     Running             1          9m28s
-order-74f45d958f-qnnz5     1/1     Running             1          11m
+    NAME                       READY   STATUS              RESTARTS   AGE
+    order-74f45d958f-qnnz5     1/1     Running             0          2m6s
+    order-74f45d958f-qnnz5     0/1     Running             1          9m28s
+    order-74f45d958f-qnnz5     1/1     Running             1          11m
 ```
 
 
@@ -597,14 +597,16 @@ siege -c100 -t60S -r10 -v --content-type "application/json" 'http://af353bfd8fcc
 ![C3](https://user-images.githubusercontent.com/30651085/120637828-54bba480-c4aa-11eb-9a12-d08564db93d2.png)
 
 ```
-NAME                       READY   STATUS              RESTARTS   AGE
-order-58bc967c7c-4s9r4     0/1     ContainerCreating   0          0s
-order-58bc967c7c-4s9r4     0/1     Running             0          4s
-order-58bc967c7c-4s9r4     1/1     Running             0          2m4s
+➜  ~ kubectl get -n siren po -w
 
-order-58bc967c7c-4s9r4     0/1     Running             1          6m15s
+    NAME                       READY   STATUS              RESTARTS   AGE
+    order-58bc967c7c-4s9r4     0/1     ContainerCreating   0          0s
+    order-58bc967c7c-4s9r4     0/1     Running             0          4s
+    order-58bc967c7c-4s9r4     1/1     Running             0          2m4s
 
-order-58bc967c7c-4s9r4     1/1     Running             1          8m19s
+    order-58bc967c7c-4s9r4     0/1     Running             1          6m15s
+
+    order-58bc967c7c-4s9r4     1/1     Running             1          8m19s
 ```
 
 - 운영시스템은 죽지 않고 지속적으로 CB 에 의하여 적절히 회로가 열림과 닫힘이 벌어지면서 자원을 보호. 
@@ -616,24 +618,24 @@ order-58bc967c7c-4s9r4     1/1     Running             1          8m19s
 
 - 상품서비스에 대해 HPA를 설정한다. 설정은 CPU 사용량이 5%를 넘어서면 pod를 5개까지 추가한다.(memory 자원 이슈로 10개 불가)
 ```
-apiVersion: autoscaling/v1
-kind: HorizontalPodAutoscaler
-metadata:
-  name: product
-  namespace: siren
-spec:
-  scaleTargetRef:
-    apiVersion: apps/v1
-    kind: Deployment
-    name: product
-  minReplicas: 1
-  maxReplicas: 5
-  targetCPUUtilizationPercentage: 5
+    apiVersion: autoscaling/v1
+    kind: HorizontalPodAutoscaler
+    metadata:
+      name: product
+      namespace: siren
+    spec:
+      scaleTargetRef:
+        apiVersion: apps/v1
+        kind: Deployment
+        name: product
+      minReplicas: 1
+      maxReplicas: 5
+      targetCPUUtilizationPercentage: 5
 
 ➜  ~ kubectl get hpa -n siren
 
-NAME      REFERENCE            TARGETS   MINPODS   MAXPODS   REPLICAS   AGE
-product   Deployment/product   9%/5%     1         5         4          4m20s
+    NAME      REFERENCE            TARGETS   MINPODS   MAXPODS   REPLICAS   AGE
+    product   Deployment/product   9%/5%     1         5         4          4m20s
 ```
 - 동시접속자 200명, 부하를 2분간 유지한다.
 ```
@@ -643,56 +645,56 @@ product   Deployment/product   9%/5%     1         5         4          4m20s
 ```
 ➜  ~ kubectl get -n siren pod -w
 
-NAME                       READY   STATUS    RESTARTS   AGE
-gateway-6449f7459-bcgz6    1/1     Running   0          3h52m
-order-58bc967c7c-4s9r4     1/1     Running   1          79m
-product-75566c6cb4-tfv72   1/1     Running   0          4m22s
-report-86d9f7b89-797v5     1/1     Running   0          3h1m
-siege                      1/1     Running   0          5h20m
+    NAME                       READY   STATUS    RESTARTS   AGE
+    gateway-6449f7459-bcgz6    1/1     Running   0          3h52m
+    order-58bc967c7c-4s9r4     1/1     Running   1          79m
+    product-75566c6cb4-tfv72   1/1     Running   0          4m22s
+    report-86d9f7b89-797v5     1/1     Running   0          3h1m
+    siege                      1/1     Running   0          5h20m
 ```
 
 - 어느정도 시간이 흐르면 스케일 아웃이 동작하는 것을 확인
 ```
 ➜  ~ kubectl get deploy -n siren
 
-NAME      READY   UP-TO-DATE   AVAILABLE   AGE
-gateway   1/1     1            1           4h4m
-order     1/1     1            1           91m
-product   4/5     5            4           17m
-report    1/1     1            1           3h14m
+    NAME      READY   UP-TO-DATE   AVAILABLE   AGE
+    gateway   1/1     1            1           4h4m
+    order     1/1     1            1           91m
+    product   4/5     5            4           17m
+    report    1/1     1            1           3h14m
 ```
 
 - HPA적용전 부하를 발생시킨 결과 (siege)
 
 ```
-Transactions:                   2161 hits
-Availability:                  97.47 %
-Elapsed time:                 119.77 secs
-Data transferred:               0.46 MB
-Response time:                 10.18 secs
-Transaction rate:              18.04 trans/sec
-Throughput:                     0.00 MB/sec
-Concurrency:                  183.72
-Successful transactions:        2161
-Failed transactions:              56
-Longest transaction:           36.64
-Shortest transaction:           0.44
+    Transactions:                   2161 hits
+    Availability:                  97.47 %
+    Elapsed time:                 119.77 secs
+    Data transferred:               0.46 MB
+    Response time:                 10.18 secs
+    Transaction rate:              18.04 trans/sec
+    Throughput:                     0.00 MB/sec
+    Concurrency:                  183.72
+    Successful transactions:        2161
+    Failed transactions:              56
+    Longest transaction:           36.64
+    Shortest transaction:           0.44
 ```
 
 - Availability 가 높아진 것을 확인 (siege)
 ```
-Transactions:                   4421 hits
-Availability:                 100.00 %
-Elapsed time:                 119.04 secs
-Data transferred:               0.90 MB
-Response time:                  5.26 secs
-Transaction rate:              37.14 trans/sec
-Throughput:                     0.01 MB/sec
-Concurrency:                  195.44
-Successful transactions:        4421
-Failed transactions:               0
-Longest transaction:           19.33
-Shortest transaction:           0.42
+    Transactions:                   4421 hits
+    Availability:                 100.00 %
+    Elapsed time:                 119.04 secs
+    Data transferred:               0.90 MB
+    Response time:                  5.26 secs
+    Transaction rate:              37.14 trans/sec
+    Throughput:                     0.01 MB/sec
+    Concurrency:                  195.44
+    Successful transactions:        4421
+    Failed transactions:               0
+    Longest transaction:           19.33
+    Shortest transaction:           0.42
 ```
 
 (gateway:5/order:7/product:6/report:5) 
