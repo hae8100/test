@@ -57,18 +57,22 @@ SirenOrder 서비스를 MSA/DDD/Event Storming/EDA 를 포괄하는 분석/설�
 # 분석/설계
 
 ## Event Storming 결과
+
 * MSAEz 로 모델링한 이벤트스토밍 결과:  http://www.msaez.io/#/storming/f2NszwGXcITtKN4MrX4BrDurru12/mine/58d983ae0915873145e4f53e60244278
 
 
 ### 이벤트 도출
+
 ![EventList](https://user-images.githubusercontent.com/30651085/120440146-41cba600-c3be-11eb-92ce-14c24896b345.png)
 
 ### 바운디드 컨텍스트
 
 1. Event Storming for Team Assignment 
+2. 
 ![TeamBoundedContext](https://user-images.githubusercontent.com/30651085/120570079-404bbd80-c452-11eb-8584-152550e21311.png)
 
 2. Event Storming for Personal Assignment
+3. 
 ![Modeling](https://user-images.githubusercontent.com/30651085/120438869-d208eb80-c3bc-11eb-85ca-3526468cb807.png)
 
     - 도메인 서열 분리 
