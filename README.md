@@ -68,11 +68,11 @@ SirenOrder 서비스를 MSA/DDD/Event Storming/EDA 를 포괄하는 분석/설�
 ### 바운디드 컨텍스트
 
 1. Event Storming for Team Assignment 
-2. 
+
 ![TeamBoundedContext](https://user-images.githubusercontent.com/30651085/120570079-404bbd80-c452-11eb-8584-152550e21311.png)
 
 2. Event Storming for Personal Assignment
-3. 
+
 ![Modeling](https://user-images.githubusercontent.com/30651085/120438869-d208eb80-c3bc-11eb-85ca-3526468cb807.png)
 
     - 도메인 서열 분리 
