@@ -400,16 +400,13 @@ gateway가 아래와 같이 LoadBalnacer 역할을 수행한다
     NS:
     ----
     siren
-    PORT:
-    ----
-    8080
     TEXT1:
     ----
     my-kafka.kafka.svc.cluster.local:9092
     TEXT2:
     ----
     Welcome
-    Events:  <none>
+    Events:  <none> 
 ```
 관련된 application.yml 파일 설정은 다음과 같다. 
 ```
@@ -428,28 +425,28 @@ gateway가 아래와 같이 LoadBalnacer 역할을 수행한다
 정상동작여부를 확인하기 위해 아래처럼 Configmap을 수정하면 
 report서비스에 지정된 Token이 잘못되어 상품을 등록해도 report서비스에는 데이터가 조회되지 않는다
 ```
-kubectl get cm report-config -n siren -o yaml
+    ➜  ~ kubectl get cm report-config -n siren -o yaml
 
-apiVersion: v1
-data:
-  NS: siren1
-  TEXT1: my-kafka.kafka.svc.cluster.local:9092
-  TEXT2: Welcome
-kind: ConfigMap
-metadata:
-  annotations:
-    kubectl.kubernetes.io/last-applied-configuration: |
-      {"apiVersion":"v1","data":{"NS":"siren1","TEXT1":"my-kafka.kafka.svc.cluster.local:9092","TEXT2":"Welcome"},"kind":"ConfigMap","metadata":{"annotations":{},"name":"report-config","namespace":"siren"}}
-  creationTimestamp: "2021-06-03T12:52:09Z"
-  name: report-config
-  namespace: siren
-  resourceVersion: "128811"
-  selfLink: /api/v1/namespaces/siren/configmaps/report-config
-  uid: 10df454f-c19f-47d0-b1c4-3eac9439dfd6
+    apiVersion: v1
+    data:
+      NS: siren1
+      TEXT1: my-kafka.kafka.svc.cluster.local:9092
+      TEXT2: Welcome
+    kind: ConfigMap
+    metadata:
+      annotations:
+        kubectl.kubernetes.io/last-applied-configuration: |
+          {"apiVersion":"v1","data":{"NS":"siren1","TEXT1":"my-kafka.kafka.svc.cluster.local:9092","TEXT2":"Welcome"},"kind":"ConfigMap","metadata":{"annotations":{},"name":"report-config","namespace":"siren"}}
+      creationTimestamp: "2021-06-03T12:52:09Z"
+      name: report-config
+      namespace: siren
+      resourceVersion: "128811"
+      selfLink: /api/v1/namespaces/siren/configmaps/report-config
+      uid: 10df454f-c19f-47d0-b1c4-3eac9439dfd6
 ```
 
 ```
-  ~ http http://af353bfd8fcc047ee927ad7315ecbd10-155124666.ap-northeast-2.elb.amazonaws.com:8080/reports
+    ➜  ~ http http://af353bfd8fcc047ee927ad7315ecbd10-155124666.ap-northeast-2.elb.amazonaws.com:8080/reports
 ```
 
 ```
