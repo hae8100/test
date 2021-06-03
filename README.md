@@ -378,6 +378,7 @@ namespace: kafka
 gateway가 아래와 같이 LoadBalnacer 역할을 수행한다  
 
     ➜  ~ kubectl get service -o wide -n siren
+    
     NAME      TYPE           CLUSTER-IP       EXTERNAL-IP                                                                   PORT(S)          AGE   SELECTOR
     gateway   LoadBalancer   10.100.236.235   a2c3105e6832445d988f3dc034dacd5e-831620996.ap-northeast-2.elb.amazonaws.com   8080:30387/TCP   16m   app=gateway
     order     ClusterIP      10.100.236.23    <none>                                                                        8080/TCP         19m   app=order
