@@ -453,8 +453,10 @@ EKS 설치된 kafka에 정상 접근된 것을 확인할 수 있다. (해당 con
 livenessProbe 기능 점검은 HPA적용되지 않은 상태에서 진행한다.
 ```
 Pod 의 변화를 살펴보기 위하여 watch
+
 ```
 ➜  ~ kubectl get -n siren po -w
+
 NAME                           READY   STATUS    RESTARTS   AGE
 pod/gateway-6449f7459-bcgz6    1/1     Running   0          31m
 pod/order-74f45d958f-qnnz5     1/1     Running   0          5m48s
@@ -463,20 +465,16 @@ pod/report-86d9f7b89-knl6h     1/1     Running   0          140m
 pod/siege                      1/1     Running   0          119m
 ```
 order 서비스를 다운시키기 위한 부하 발생
+
 ```
 ➜  ~ siege -c100 -t60S -r10 -v --content-type "application/json" 'http://af353bfd8fcc047ee927ad7315ecbd10-155124666.ap-northeast-2.elb.amazonaws.com:8080/orders POST {"productId": "4"}'
 ```
+
 order Pod의 liveness 조건 미충족에 의한 RESTARTS 횟수 증가 확인
 ```
 ➜  ~ kubectl get -n siren po -w
-NAME                       READY   STATUS    RESTARTS   AGE
-gateway-6449f7459-bcgz6    1/1     Running   0          36m
-order-74f45d958f-qnnz5     0/1     Running   1          10m
-product-698dd8fcc4-5frqp   1/1     Running   0          46m
-report-86d9f7b89-knl6h     1/1     Running   0          144m
-siege                      1/1     Running   0          124m
-```
-kubectl get -n siren po -w
+
+NAME                       READY   STATUS              RESTARTS   AGE
 order-74f45d958f-qnnz5     1/1     Running             0          2m6s
 order-74f45d958f-qnnz5     0/1     Running             1          9m28s
 order-74f45d958f-qnnz5     1/1     Running             1          11m
@@ -590,7 +588,7 @@ apiVersion: autoscaling/v1
 kind: HorizontalPodAutoscaler
 metadata:
   name: product
-  namespace: coffee
+  namespace: siren
 spec:
   scaleTargetRef:
     apiVersion: apps/v1
@@ -600,18 +598,19 @@ spec:
   maxReplicas: 5
   targetCPUUtilizationPercentage: 5
 
-➜  ~ kubectl get hpa -n coffee
-NAME      REFERENCE            TARGETS         MINPODS   MAXPODS   REPLICAS   AGE
-order     Deployment/order     30%/5%          1         5         5          17h
-product   Deployment/product   31%/10%         1         5         5          132m
+➜  ~ kubectl get hpa -n siren
+
+NAME      REFERENCE            TARGETS   MINPODS   MAXPODS   REPLICAS   AGE
+product   Deployment/product   10%/5%    1         5         5          7m18s
 ```
-- 부하를 2분간 유지한다.
+- 부하를 1분간 유지한다.
 ```
-➜  ~ siege -c30 -t60S -r10 --content-type "application/json" 'http://ac4ff02e7969e44afbe64ede4b2441ac-1979746227.ap-northeast-2.elb.amazonaws.com:8080/orders POST {"customerId":2, "productId":1}'
+➜  ~ siege -c100 -t60S -r10 -v --content-type "application/json" 'http://af353bfd8fcc047ee927ad7315ecbd10-155124666.ap-northeast-2.elb.amazonaws.com:8080/products POST {"price": "5000", "status": "Available"}'
 ```
 - 오토스케일이 어떻게 되고 있는지 확인한다.
 ```
-➜  ~ kubectl get deploy -n coffee
+➜  ~ kubectl get deploy -n siren
+
 NAME       READY   UP-TO-DATE   AVAILABLE   AGE
 customer   1/1     1            1           8h
 delivery   1/1     1            1           8h
@@ -622,14 +621,13 @@ report     1/1     1            1           4h51m
 ```
 - 어느정도 시간이 흐르면 스케일 아웃이 동작하는 것을 확인
 ```
-➜  ~ kubectl get deploy -n coffee
-NAME              READY   UP-TO-DATE   AVAILABLE   AGE
-customer          1/1     1            1           23h
-delivery          1/1     1            1           23h
-gateway           2/2     2            2           21h
-order             5/5     5            5           23h
-product           5/5     5            5           23h
-report            1/1     1            1           19h
+➜  ~ kubectl get deploy -n siren
+
+NAME      READY   UP-TO-DATE   AVAILABLE   AGE
+gateway   1/1     1            1           3h12m
+order     1/1     1            1           39m
+product   5/5     5            5           143m
+report    1/1     1            1           141m
 ```
 
 - Availability 가 높아진 것을 확인 (siege)
