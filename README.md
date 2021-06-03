@@ -27,7 +27,7 @@ SirenOrder 서비스를 MSA/DDD/Event Storming/EDA 를 포괄하는 분석/설�
     - [CI/CD 설정](#CICD-설정)
     - [Kubernetes 설정](#Kubernetes-설정)
     - [ConfigMap](#ConfigMap-설정)
-    - [liveness Probe](# 셀프힐링 (livenessProbe 설정))
+    - [liveness Probe](### 셀프힐링-livenessProbe-설정)
     - [동기식 호출 / 서킷 브레이킹 / 장애격리](#동기식-호출/서킷-브레이킹/장애격리)
     - [오토스케일 아웃](#Autoscale-HPA)
     - [무정지 재배포](#Zero-downtime-deploy)
@@ -437,7 +437,7 @@ EKS 설치된 kafka에 정상 접근된 것을 확인할 수 있다. (해당 con
     2021-05-20 13:42:14.064 INFO 1 --- [container-0-C-1] o.s.c.s.b.k.KafkaMessageChannelBinder$1 : partitions assigned: [coffee-0]
 ```
 
-## 셀프힐링 (livenessProbe 설정)
+## 셀프힐링 livenessProbe 설정
 - order deployment livenessProbe (gateway:5/order:3/product:8/report:5) 
 ```
           livenessProbe:
