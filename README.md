@@ -602,150 +602,66 @@ spec:
 ➜  ~ kubectl get hpa -n siren
 
 NAME      REFERENCE            TARGETS   MINPODS   MAXPODS   REPLICAS   AGE
-product   Deployment/product   10%/5%    1         5         5          7m18s
+product   Deployment/product   9%/5%     1         5         4          4m20s
 ```
-- 부하를 1분간 유지한다.
+- 동시접속자 200명, 부하를 2분간 유지한다.
 ```
-➜  ~ siege -c100 -t60S -r10 -v --content-type "application/json" 'http://af353bfd8fcc047ee927ad7315ecbd10-155124666.ap-northeast-2.elb.amazonaws.com:8080/products POST {"price": "5000", "status": "Available"}'
+➜  ~ siege -c200 -t120S -r10 -v --content-type "application/json" 'http://af353bfd8fcc047ee927ad7315ecbd10-155124666.ap-northeast-2.elb.amazonaws.com:8080/products POST {"price": "5000", "status": "Available"}'
 ```
 - 오토스케일이 어떻게 되고 있는지 확인한다.
 ```
-➜  ~ kubectl get deploy -n siren
+➜  ~ kubectl get -n siren pod -w
 
-NAME       READY   UP-TO-DATE   AVAILABLE   AGE
-customer   1/1     1            1           8h
-delivery   1/1     1            1           8h
-gateway    2/2     2            2           6h24m
-order      1/1     1            1           8h
-product    1/1     1            1           8h
-report     1/1     1            1           4h51m
+NAME                       READY   STATUS    RESTARTS   AGE
+gateway-6449f7459-bcgz6    1/1     Running   0          3h52m
+order-58bc967c7c-4s9r4     1/1     Running   1          79m
+product-75566c6cb4-tfv72   1/1     Running   0          4m22s
+report-86d9f7b89-797v5     1/1     Running   0          3h1m
+siege                      1/1     Running   0          5h20m
 ```
+
 - 어느정도 시간이 흐르면 스케일 아웃이 동작하는 것을 확인
 ```
 ➜  ~ kubectl get deploy -n siren
 
 NAME      READY   UP-TO-DATE   AVAILABLE   AGE
-gateway   1/1     1            1           3h12m
-order     1/1     1            1           39m
-product   5/5     5            5           143m
-report    1/1     1            1           141m
+gateway   1/1     1            1           4h4m
+order     1/1     1            1           91m
+product   4/5     5            4           17m
+report    1/1     1            1           3h14m
 ```
 
-- Availability 가 높아진 것을 확인 (siege)
+- HPA적용전 부하를 발생시킨 결과 (siege)
 
 ```
-Transactions:                   1103 hits
-Availability:                  99.55 %
-Elapsed time:                  59.28 secs
-Data transferred:               0.23 MB
-Response time:                  9.35 secs
-Transaction rate:              18.61 trans/sec
+Transactions:                   2161 hits
+Availability:                  97.47 %
+Elapsed time:                 119.77 secs
+Data transferred:               0.46 MB
+Response time:                 10.18 secs
+Transaction rate:              18.04 trans/sec
 Throughput:                     0.00 MB/sec
-Concurrency:                  173.90
-Successful transactions:        1103
-Failed transactions:               5
-Longest transaction:           31.05
-Shortest transaction:           0.47
+Concurrency:                  183.72
+Successful transactions:        2161
+Failed transactions:              56
+Longest transaction:           36.64
+Shortest transaction:           0.44
 ```
 
 - Availability 가 높아진 것을 확인 (siege)
 ```
-Transactions:                   1079 hits
+Transactions:                   4421 hits
 Availability:                 100.00 %
-Elapsed time:                  59.16 secs
-Data transferred:               0.22 MB
-Response time:                  5.21 secs
-Transaction rate:              18.24 trans/sec
-Throughput:                     0.00 MB/sec
-Concurrency:                   95.02
-Successful transactions:        1079
+Elapsed time:                 119.04 secs
+Data transferred:               0.90 MB
+Response time:                  5.26 secs
+Transaction rate:              37.14 trans/sec
+Throughput:                     0.01 MB/sec
+Concurrency:                  195.44
+Successful transactions:        4421
 Failed transactions:               0
-Longest transaction:           15.01
-Shortest transaction:           0.43
+Longest transaction:           19.33
+Shortest transaction:           0.42
 ```
-
-
-## Zero-downtime deploy
-k8s의 무중단 서비스 배포 기능을 점검한다.
-```
-    ➜  ~ kubectl describe deploy order -n coffee
-    Name:                   order
-    Namespace:              coffee
-    CreationTimestamp:      Thu, 20 May 2021 12:59:14 +0900
-    Labels:                 app=order
-    Annotations:            deployment.kubernetes.io/revision: 8
-    Selector:               app=order
-    Replicas:               4 desired | 4 updated | 4 total | 4 available | 0 unavailable
-    StrategyType:           RollingUpdate
-    MinReadySeconds:        0
-    RollingUpdateStrategy:  50% max unavailable, 50% max surge
-    Pod Template:
-        Labels:       app=order
-        Annotations:  kubectl.kubernetes.io/restartedAt: 2021-05-20T12:06:29Z
-        Containers:
-            order:
-                Image:        740569282574.dkr.ecr.ap-northeast-2.amazonaws.com/order:v1
-                Port:         8080/TCP
-                Host Port:    0/TCP
-                Liveness:     http-get http://:8080/actuator/health delay=120s timeout=2s period=5s #success=1 #failure=5
-                Readiness:    http-get http://:8080/actuator/health delay=10s timeout=2s period=5s #success=1 #failure=10
-```
-기능 점검을 위해 order Deployment의 replicas를 4로 수정했다. 
-그리고 위 Readiness와 RollingUpdateStrategy 설정이 정상 적용되는지 확인한다.
-```
-    ➜  ~ kubectl rollout status deploy/order -n coffee
-
-    ➜  ~ kubectl get po -n coffee
-    NAME                        READY   STATUS    RESTARTS   AGE
-    customer-785f544f95-mh456   1/1     Running   0          5h40m
-    delivery-557f4d7f49-z47bx   1/1     Running   0          5h40m
-    gateway-6886bbf85b-58ms8    1/1     Running   0          4h56m
-    gateway-6886bbf85b-mg9fz    1/1     Running   0          4h56m
-    order-7978b484d8-6qsjq      1/1     Running   0          62s
-    order-7978b484d8-h4hjs      1/1     Running   0          62s
-    order-7978b484d8-rw2zk      1/1     Running   0          62s
-    order-7978b484d8-x622v      1/1     Running   0          62s
-    product-7f67966577-n7kqk    1/1     Running   0          5h40m
-    report-5c6fd7b477-w9htj     1/1     Running   0          4h27m
-    
-    ➜  ~ kubectl get deploy -n coffee
-    NAME       READY   UP-TO-DATE   AVAILABLE   AGE
-    customer   1/1     1            1           8h
-    delivery   1/1     1            1           8h
-    gateway    2/2     2            2           6h1m
-    order      2/4     4            2           8h
-    product    1/1     1            1           8h
-    report     1/1     1            1           4h28m
-    
-    ➜  ~ kubectl get po -n coffee
-    NAME                        READY   STATUS    RESTARTS   AGE
-    customer-785f544f95-mh456   1/1     Running   0          5h41m
-    delivery-557f4d7f49-z47bx   1/1     Running   0          5h41m
-    gateway-6886bbf85b-58ms8    1/1     Running   0          4h57m
-    gateway-6886bbf85b-mg9fz    1/1     Running   0          4h57m
-    order-7978b484d8-6qsjq      1/1     Running   0          115s
-    order-7978b484d8-rw2zk      1/1     Running   0          115s
-    order-84c9d7c848-mmw4b      0/1     Running   0          18s
-    order-84c9d7c848-r64lc      0/1     Running   0          18s
-    order-84c9d7c848-tbl8l      0/1     Running   0          18s
-    order-84c9d7c848-tslfc      0/1     Running   0          18s
-    product-7f67966577-n7kqk    1/1     Running   0          5h41m
-    report-5c6fd7b477-w9htj     1/1     Running   0          4h28m
-    
-    ➜  ~ kubectl get po -n coffee
-    NAME                        READY   STATUS    RESTARTS   AGE
-    customer-785f544f95-mh456   1/1     Running   0          5h42m
-    delivery-557f4d7f49-z47bx   1/1     Running   0          5h42m
-    gateway-6886bbf85b-58ms8    1/1     Running   0          4h58m
-    gateway-6886bbf85b-mg9fz    1/1     Running   0          4h58m
-    order-84c9d7c848-mmw4b      1/1     Running   0          65s
-    order-84c9d7c848-r64lc      1/1     Running   0          65s
-    order-84c9d7c848-tbl8l      1/1     Running   0          65s
-    order-84c9d7c848-tslfc      1/1     Running   0          65s
-    product-7f67966577-n7kqk    1/1     Running   0          5h42m
-    report-5c6fd7b477-w9htj     1/1     Running   0          4h29m
-```
-배포시 pod는 위의 흐름과 같이 생성 및 종료되어 서비스의 무중단을 보장했다.
-
 
 
