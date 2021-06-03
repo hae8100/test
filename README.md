@@ -487,7 +487,7 @@ order-74f45d958f-qnnz5     1/1     Running             1          11m
 ## 동기식 호출 / 서킷 브레이킹 / 장애격리
 
 * 서킷 브레이킹 프레임워크의 선택: Spring FeignClient + Hystrix 옵션을 사용하여 구현함
--  (gateway:5/order:4/product:6/report:5) 
+-  (gateway:5/order:7/product:6/report:5) 
 
 시나리오는 주문(order)-->상품(product) 연결을 RestFul Request/Response 로 연동하여 구현이 되어있고, 주문이 과도할 경우 CB 를 통하여 장애격리.
 
