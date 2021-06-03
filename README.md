@@ -632,6 +632,23 @@ report    1/1     1            1           141m
 ```
 
 - Availability 가 높아진 것을 확인 (siege)
+
+```
+Transactions:                   1103 hits
+Availability:                  99.55 %
+Elapsed time:                  59.28 secs
+Data transferred:               0.23 MB
+Response time:                  9.35 secs
+Transaction rate:              18.61 trans/sec
+Throughput:                     0.00 MB/sec
+Concurrency:                  173.90
+Successful transactions:        1103
+Failed transactions:               5
+Longest transaction:           31.05
+Shortest transaction:           0.47
+```
+
+- Availability 가 높아진 것을 확인 (siege)
 ```
 Transactions:                   1079 hits
 Availability:                 100.00 %
