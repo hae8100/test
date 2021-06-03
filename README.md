@@ -524,6 +524,34 @@ hystrix:
         }
 ```
 
+- 오더(order)서비스의 Fallback Class 지정
+```
+        @FeignClient(name="product", url="${feign.client.url.productUrl}", fallback = ProductPrice.class)
+        public interface ProductService {
+
+            @RequestMapping(method = RequestMethod.GET, path="/products/checkProduct")
+            public Integer checkProduct(@RequestParam("productId") Long productId) throws Exception;
+
+        }
+```
+
+- 오더(order)서비스의 Fallback Class 추가
+```
+        package siren.external;
+
+        import org.springframework.stereotype.Component;
+
+        @Component
+        public class ProductPrice implements ProductService {
+            @Override 
+            public Integer checkProduct(Long productId) {
+            System.out.println("##### /ProductPrice Fallback  called #####");
+            Integer price = 0;
+                    return price;
+            }
+        }
+```
+
 * 부하테스터 siege 툴을 통한 서킷 브레이커 동작 확인:
 - 동시사용자 100명
 - 60초 동안 실시
@@ -531,15 +559,12 @@ hystrix:
 ```
 siege -c100 -t60S -r10 -v --content-type "application/json" 'http://af353bfd8fcc047ee927ad7315ecbd10-155124666.ap-northeast-2.elb.amazonaws.com:8080/orders POST {"productId": "4"}'
 ```
-```
+
 ![C1](https://user-images.githubusercontent.com/30651085/120637724-33f34f00-c4aa-11eb-8b54-def5b0fed1e3.png)
-```
-```
+
 ![C2](https://user-images.githubusercontent.com/30651085/120637803-4cfc0000-c4aa-11eb-8eb8-ec30feebfeea.png)
-```
-```
+
 ![C3](https://user-images.githubusercontent.com/30651085/120637828-54bba480-c4aa-11eb-9a12-d08564db93d2.png)
-```
 
 ```
 NAME                       READY   STATUS              RESTARTS   AGE
