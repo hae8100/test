@@ -451,7 +451,7 @@ EKS 설치된 kafka에 정상 접근된 것을 확인할 수 있다. (해당 con
             failureThreshold: 5       //실패5번이후에는 RESTART
 ```
 livenessProbe 기능 점검은 HPA적용되지 않은 상태에서 진행한다.
-```
+
 Pod 의 변화를 살펴보기 위하여 watch
 
 ```
@@ -464,6 +464,7 @@ pod/product-698dd8fcc4-5frqp   1/1     Running   0          42m
 pod/report-86d9f7b89-knl6h     1/1     Running   0          140m
 pod/siege                      1/1     Running   0          119m
 ```
+
 order 서비스를 다운시키기 위한 부하 발생
 
 ```
@@ -471,6 +472,7 @@ order 서비스를 다운시키기 위한 부하 발생
 ```
 
 order Pod의 liveness 조건 미충족에 의한 RESTARTS 횟수 증가 확인
+
 ```
 ➜  ~ kubectl get -n siren po -w
 
@@ -479,7 +481,6 @@ order-74f45d958f-qnnz5     1/1     Running             0          2m6s
 order-74f45d958f-qnnz5     0/1     Running             1          9m28s
 order-74f45d958f-qnnz5     1/1     Running             1          11m
 ```
-
 
 
 ## 동기식 호출 / 서킷 브레이킹 / 장애격리
