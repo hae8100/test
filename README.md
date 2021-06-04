@@ -41,8 +41,8 @@ SirenOrder 서비스를 MSA/DDD/Event Storming/EDA 를 포괄하는 분석/설�
 2. 상품이 등록되면 상품상태를 주문서비스(DB)의 상품정보에 전달한다
 3. 점원에게 상품상태 정보를 조회할 수 있는 Report 서비스를 제공한다
 4. 고객은 주문할 메뉴를 선택하여 주문한다
-5. 주문이 되면 주문서비스내 상품상태(Available, SoldOut)와 상품서비스의 상품가격을 조회한다.
-6. 가격이 0KRW이 아니고 상품상태가 Available할 경우 주문은 완료된다.
+5. 주문이 되면 주문서비스내 상품상태(Available, SoldOut)와 상품서비스의 상품가격을 조회한다
+6. 가격이 0KRW이 아니고 상품상태가 Available할 경우 주문은 완료된다
 
 [ 비기능적 요구사항 ]
 1. 트랜잭션
@@ -88,7 +88,7 @@ SirenOrder 서비스를 MSA/DDD/Event Storming/EDA 를 포괄하는 분석/설�
     - 상품이 등록되면 상품상태를 주문서비스(DB)의 상품정보에 전달한다 (ok)
     - 점원에게 상품상태 정보를 조회할 수 있는 Report 서비스를 제공한다 (ok)
     - 고객은 주문할 메뉴를 선택하여 주문한다 (ok)
-    - 주문이 되면 주문서비스내 상품상태(Available, SoldOut)와 상품서비스의 상품가격을 조회한다.
+    - 주문이 되면 주문서비스내 상품상태(Available, SoldOut)와 상품서비스의 상품가격을 조회한다 (ok)
     - 가격이 0KRW이 아니고 상품상태가 Available할 경우 주문은 완료된다 (ok)
 
   1) 동기식호출 (Publish/Subscribe)
