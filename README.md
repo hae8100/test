@@ -134,6 +134,7 @@ cd report
 mvn spring-boot:run  
 ```
 
+
 ## DDD 의 적용
 
 - 각 서비스내에 도출된 핵심 Aggregate Root 객체를 Entity 로 선언하였다.
@@ -197,6 +198,7 @@ http PATCH http://a2c3105e6832445d988f3dc034dacd5e-831620996.ap-northeast-2.elb.
 http GET http://localhost:8081/orders/1
 http GET http://a2c3105e6832445d988f3dc034dacd5e-831620996.ap-northeast-2.elb.amazonaws.com:8080/orders/1
 ```
+
 
 ## 동기식 호출 과 Fallback 처리
 
@@ -310,8 +312,6 @@ public Integer checkProduct(@RequestParam("productId") Long productId)
 #주문처리 
 http POST http://localhost:8081/orders productId=1   #Fail
 
-![F1](https://user-images.githubusercontent.com/30651085/120725835-c7139f80-c511-11eb-9edc-057083c21ee9.png)
-
 #상품서비스 재기동
 cd 상품
 mvn spring-boot:run
@@ -320,6 +320,7 @@ mvn spring-boot:run
 http POST http://localhost:8081/orders productId=1   #Success
 ```
 
+![F1](https://user-images.githubusercontent.com/30651085/120725835-c7139f80-c511-11eb-9edc-057083c21ee9.png)
 
 
 
@@ -415,6 +416,7 @@ http GET http://localhost:8081/products/1     # 상품 상태 Available로 변�
 ```
 
 
+
 # 운영
 
 ## CICD 설정
@@ -449,6 +451,8 @@ gateway가 아래와 같이 LoadBalnacer 역할을 수행한다
     order     ClusterIP      10.100.236.23    <none>                                                                        8080/TCP         19m   app=order
     product   ClusterIP      10.100.220.191   <none>                                                                        8080/TCP         23m   app=product
     report    ClusterIP      10.100.39.1      <none>                                                                        8080/TCP         17m   app=report
+
+
 
 
 ## ConfigMap 설정
@@ -561,6 +565,8 @@ transfer-encoding: chunked
 
 ```
 
+
+
 ## 셀프힐링 livenessProbe 설정
 - order deployment livenessProbe (gateway:5/order:3/product:8/report:5) 
 ```
@@ -604,6 +610,7 @@ order Pod의 liveness 조건 미충족에 의한 RESTARTS 횟수 증가 확인
     order-74f45d958f-qnnz5     0/1     Running             1          9m28s
     order-74f45d958f-qnnz5     1/1     Running             1          11m
 ```
+
 
 
 ## 동기식 호출 / 서킷 브레이킹 / 장애격리
@@ -706,7 +713,8 @@ siege -c100 -t60S -r10 -v --content-type "application/json" 'http://af353bfd8fcc
 
 
 
-### Autoscale HPA
+
+## Autoscale HPA
 
 - 상품서비스에 대해 HPA를 설정한다. 설정은 CPU 사용량이 5%를 넘어서면 pod를 5개까지 추가한다.
 ```
