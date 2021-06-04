@@ -175,7 +175,7 @@ public class Product {
 
 
 ```
-- Entity Pattern 과 Repository Pattern 을 적용하여 JPA 를 통하여 다양한 데이터소스 유형 (RDB or NoSQL) 에 대한 별도의 처리가 없도록 데이터 접근 어댑터를 자동 생성하기 위하여 Spring Data REST 의 RestRepository 를 적용하였다
+- Entity Pattern 과 Repository Pattern 적용한 JPA 를 통하여 다양한 데이터소스 유형 (RDB or NoSQL) 에 대한 별도의 처리가 없도록 데이터 접근 어댑터를 자동 생성하기 위하여 Spring Data REST 의 RestRepository 를 적용하였다
 ```
 package siren;
 
@@ -201,28 +201,6 @@ http GET http://a2c3105e6832445d988f3dc034dacd5e-831620996.ap-northeast-2.elb.am
 ## 동기식 호출 과 Fallback 처리
 
 분석단계에서의 조건 중 하나로 주문(order)->상품(product) 간의 호출은 동기식 일관성을 유지하는 트랜잭션으로 처리하기로 하였다. 호출 프로토콜은 이미 앞서 Rest Repository 에 의해 노출되어있는 REST 서비스를 FeignClient 를 이용하여 호출하도록 한다. 
-
-- 상품 서비스를 호출하기 위하여 Stub과 (FeignClient) 를 이용하여 Service 대행 인터페이스 (Proxy) 를 구현 
-
-```
-package siren.external;
-
-import org.springframework.cloud.openfeign.FeignClient;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestMethod;
-import org.springframework.web.bind.annotation.RequestParam;
-
-import java.util.Date;
-
-@FeignClient(name="product", url="${feign.client.url.productUrl}")
-public interface ProductService {
-
-    @RequestMapping(method = RequestMethod.GET, path="/products/checkProduct")
-    public Integer checkProduct(@RequestParam("productId") Long productId);
-
-}
-```
 
 - 주문 받은 즉시 상품 가격을 조회하도록 구현
 ```
@@ -285,6 +263,28 @@ public class Order {
 }
 ```
 
+- 상품 서비스를 호출하기 위하여 Stub과 (FeignClient) 를 이용하여 Service 대행 인터페이스 (Proxy) 를 구현 
+
+```
+package siren.external;
+
+import org.springframework.cloud.openfeign.FeignClient;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestMethod;
+import org.springframework.web.bind.annotation.RequestParam;
+
+import java.util.Date;
+
+@FeignClient(name="product", url="${feign.client.url.productUrl}")
+public interface ProductService {
+
+    @RequestMapping(method = RequestMethod.GET, path="/products/checkProduct")
+    public Integer checkProduct(@RequestParam("productId") Long productId);
+
+}
+```
+
 ```
 @RequestMapping(value = "/products/checkProduct", method = RequestMethod.GET, produces = "application/json;charset=UTF-8")
 
@@ -304,12 +304,13 @@ public Integer checkProduct(@RequestParam("productId") Long productId)
 
 - 동기식 호출에서는 호출 시간에 따른 타임 커플링이 발생하며, 상품 시스템이 장애가 나면 주문도 못받는다는 것을 확인:
 
-
 ```
 # 상품 (product) 서비스를 잠시 내려놓음 (ctrl+c, replicas 0 으로 설정)
 
 #주문처리 
 http POST http://localhost:8081/orders productId=1   #Fail
+
+![F1](https://user-images.githubusercontent.com/30651085/120725835-c7139f80-c511-11eb-9edc-057083c21ee9.png)
 
 #상품서비스 재기동
 cd 상품
@@ -318,6 +319,8 @@ mvn spring-boot:run
 #주문처리
 http POST http://localhost:8081/orders productId=1   #Success
 ```
+
+
 
 
 
@@ -426,7 +429,7 @@ GitHub Webhook이 동작하여 Docker image가 자동 생성 및 ECR 업로드 �
 
 
 ## Kubernetes 설정
-AWS EKS를 활용했으며, 추가한 namespace는 coffee와 kafka로 아래와 같다.
+AWS EKS를 활용했으며, 추가한 namespace는 siren와 kafka로 아래와 같다.
 
 ###EKS Deployment
 
@@ -470,7 +473,31 @@ gateway가 아래와 같이 LoadBalnacer 역할을 수행한다
     Welcome
     Events:  <none> 
 ```
+관련된 configmap은 다음과 같다. 
+
+```
+    ➜  ~ kubectl get cm report-config -n siren -o yaml
+
+    apiVersion: v1
+    data:
+      NS: siren
+      TEXT1: my-kafka.kafka.svc.cluster.local:9092
+      TEXT2: Welcome
+    kind: ConfigMap
+    metadata:
+      annotations:
+        kubectl.kubernetes.io/last-applied-configuration: |
+          {"apiVersion":"v1","data":{"NS":"siren1","TEXT1":"my-kafka.kafka.svc.cluster.local:9092","TEXT2":"Welcome"},"kind":"ConfigMap","metadata":{"annotations":{},"name":"report-config","namespace":"siren"}}
+      creationTimestamp: "2021-06-03T12:52:09Z"
+      name: report-config
+      namespace: siren
+      resourceVersion: "128811"
+      selfLink: /api/v1/namespaces/siren/configmaps/report-config
+      uid: 10df454f-c19f-47d0-b1c4-3eac9439dfd6
+```
+
 관련된 application.yml 파일 설정은 다음과 같다. 
+
 ```
     spring:
       profiles: docker
@@ -484,8 +511,11 @@ gateway가 아래와 같이 LoadBalnacer 역할을 수행한다
             destination: ${NS} #siren
             contentType: application/json
 ```
+
+
 정상동작여부를 확인하기 위해 아래처럼 Configmap을 수정하면 
 report서비스에 지정된 Token이 잘못되어 상품을 등록해도 report서비스에는 데이터가 조회되지 않는다
+
 ```
     ➜  ~ kubectl get cm report-config -n siren -o yaml
 
@@ -678,7 +708,7 @@ siege -c100 -t60S -r10 -v --content-type "application/json" 'http://af353bfd8fcc
 
 ### Autoscale HPA
 
-- 상품서비스에 대해 HPA를 설정한다. 설정은 CPU 사용량이 5%를 넘어서면 pod를 5개까지 추가한다.(memory 자원 이슈로 10개 불가)
+- 상품서비스에 대해 HPA를 설정한다. 설정은 CPU 사용량이 5%를 넘어서면 pod를 5개까지 추가한다.
 ```
     apiVersion: autoscaling/v1
     kind: HorizontalPodAutoscaler
